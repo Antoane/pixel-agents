@@ -367,6 +367,10 @@ export const TERMINAL_RESIZE_DEBOUNCE_MS = 100;
 export const TERMINAL_LINK_PROTOCOLS: readonly string[] = ['http:', 'https:'];
 /** window.open features for terminal links: no opener handle, no Referer. */
 export const TERMINAL_LINK_WINDOW_FEATURES = 'noopener,noreferrer';
+/** Largest OSC 52 clipboard write the terminal honours (clipboardKeys.ts),
+ *  in base64 characters (~3 MB of text). Bigger ones are dropped rather than
+ *  decoded: a runaway program shouldn't be able to stall the page. */
+export const TERMINAL_OSC52_MAX_BASE64_CHARS = 4_000_000;
 
 /** xterm theme, matched to the office palette (index.css :root). */
 export const TERMINAL_THEME = {

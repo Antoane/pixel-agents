@@ -11,6 +11,7 @@ import {
   TERMINAL_SCROLLBACK_LINES,
   TERMINAL_THEME,
 } from '../constants.js';
+import { attachClipboardInput } from '../terminal/clipboardInput.js';
 import type { TerminalConnectionStatus } from '../terminal/terminalClient.js';
 import { TerminalConnection } from '../terminal/terminalClient.js';
 import { terminalLinkOpener } from '../terminal/terminalLinks.js';
@@ -40,6 +41,8 @@ export function TerminalPane({ agentId, isActive, onStatusChange }: TerminalPane
   // reconnect the socket on every parent render.
   const statusRef = useRef(onStatusChange);
   statusRef.current = onStatusChange;
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -85,6 +88,10 @@ export function TerminalPane({ agentId, isActive, onStatusChange }: TerminalPane
     void connection.connect();
 
     term.onData((data) => connection.write(data));
+    // Keyboard copy/paste on Windows and Linux, OSC 52 clipboard writes.
+    const detachClipboard = attachClipboardInput(term, host, {
+      isActive: () => isActiveRef.current,
+    });
 
     // Debounced: ResizeObserver fires per frame during a drag, and every resize
     // is a syscall on the PTY plus a full TUI repaint.
@@ -139,6 +146,7 @@ export function TerminalPane({ agentId, isActive, onStatusChange }: TerminalPane
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       if (verifyFrame !== null) cancelAnimationFrame(verifyFrame);
+      detachClipboard();
       observer.disconnect();
       connection.dispose();
       term.dispose();
