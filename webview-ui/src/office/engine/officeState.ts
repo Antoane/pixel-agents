@@ -71,6 +71,8 @@ export class OfficeState {
   /** Reverse lookup: sub-agent character ID → parent info */
   subagentMeta: Map<number, { parentAgentId: number; parentToolId: string }> = new Map();
   private nextSubagentId = -1;
+  /** Session colors by agent ID; can arrive before the character exists */
+  private sessionColors: Map<number, string> = new Map();
 
   /**
    * folderName → list of Area labels that workspace folder belongs to.
@@ -488,6 +490,7 @@ export class OfficeState {
     if (folderName) {
       ch.folderName = folderName;
     }
+    ch.sessionColor = this.sessionColors.get(id);
     if (!skipSpawnEffect) {
       startMatrixEffect(ch, 'spawn');
     }
@@ -713,6 +716,7 @@ export class OfficeState {
     if (parentCh) ch.dir = parentCh.dir;
     ch.isSubagent = true;
     ch.parentAgentId = parentAgentId;
+    ch.sessionColor = parentCh?.sessionColor;
     startMatrixEffect(ch, 'spawn');
     this.characters.set(id, ch);
 
@@ -1077,6 +1081,16 @@ export class OfficeState {
     const ch = this.characters.get(id);
     if (!ch) return;
     ch.isHeadless = headless;
+  }
+
+  setSessionColor(id: number, color: string | undefined): void {
+    if (color) this.sessionColors.set(id, color);
+    else this.sessionColors.delete(id);
+    for (const ch of this.characters.values()) {
+      if (ch.id === id || (ch.isSubagent && ch.parentAgentId === id)) {
+        ch.sessionColor = color;
+      }
+    }
   }
 
   setAgentContext(id: number, contextTokens: number, maxContextTokens: number): void {
